@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>雲端架構與網路概念解析</title>
+  
+  <!-- 引入 Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- 引入 React & ReactDOM -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  
+  <!-- 引入 Babel 用於瀏覽器端編譯 JSX -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  
+  <!-- 引入 Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fadeIn {
+      animation: fadeIn 0.3s ease-out forwards;
+    }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+  </style>
+</head>
+<body class="bg-slate-100 min-h-screen">
+  
+  <!-- React 應用的掛載點 -->
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    // 自定義 Icon 元件，使用 Lucide JS
+    const Icon = ({ name, size = 24, className = "" }) => {
+      const iconRef = React.useRef(null);
+
+      useEffect(() => {
+        if (iconRef.current) {
+          // 將 PascalCase 轉換為 kebab-case，因為 lucide 的 icon 名稱是 kebab-case
+          const lucideName = name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
+          
+          iconRef.current.innerHTML = '';
+          
+          // 檢查圖示是否存在
+          if (lucide.icons[lucideName]) {
+             lucide.createIcons({
+              icons: { [lucideName]: lucide.icons[lucideName] },
+              nameAttr: 'data-lucide',
+              attrs: {
+                class: className,
+                width: size,
+                height: size,
+              }
+            });
+            const svg = lucide.icons[lucideName].toSvg({ class: className, width: size, height: size });
+            iconRef.current.innerHTML = svg;
+          } else {
+             console.warn(`Icon "${lucideName}" not found in Lucide.`);
+          }
+        }
+      }, [name, size, className]);
+
+      return <span ref={iconRef} className="inline-flex items-center justify-center"></span>;
+    };
+
+    const CloudConceptsApp = () => {
+      const [activeTab, setActiveTab] = useState('vps-vm');
+
+      const tabs = [
+        { id: 'vps-vm', name: 'VM vs VPS', icon: 'Server' },
+        { id: 'aws-gcp', name: 'AWS Lightsail vs GCP', icon: 'Cloud' },
+        { id: 'ec2', name: 'EC2 核心功能', icon: 'Cpu' },
+        { id: 'gce', name: 'GCE 核心功能', icon: 'Globe' },
+        { id: 'ec2-gce', name: 'EC2 vs GCE 比較', icon: 'Layers' },
+        { id: 'vpc', name: 'VPC 概念圖解', icon: 'Network' },
+        { id: 'vpn-ssh', name: 'VPN vs SSH', icon: 'Key' },
+      ];
+
+      const renderContent = () => {
+        switch (activeTab) {
+          case 'vps-vm':
+            return (
+              <div className="space-y-6 animate-fadeIn">
+                <h2 className="text-2xl font-bold text-slate-800 border-b pb-2">VM 與 VPS 的核心差異</h2>
+                <p className="text-slate-600">雖然技術底層都是虛擬化，但在資源分配與使用情境上有顯著差異。</p>
+                
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="bg-white p-6 rounded-xl shadow-md border border-slate-100 hover:shadow-lg transition-shadow">
+                    <div className="flex items-center space-x-4 mb-4">
+                      <div className="p-3 bg-blue-100 text-blue-600 rounded-lg"><Icon name="Home" size={32} /></div>
+                      <h3 className="text-xl font-bold text-slate-800">VM (虛擬機器)</h3>
+                    </div>
+                    <p className="text-slate-600 mb-4 font-semibold text-blue-600">比喻：蓋獨棟別墅</p>
+                    <ul className="space-y-2 text-sm text-slate-600">
+                      <li className="flex items-center"><Icon name="Zap" size={16} className="text-green-500 mr-2" /> 資源物理隔離，完全獨享</li>
+                      <li className="flex items-center"><Icon name="Zap" size={16} className="text-green-500 mr-2" /> 從 BIOS 到 OS 的完全控制權</li>
+                      <li className="flex items-center"><Icon name="Zap" size={16} className="text-green-500 mr-2" /> 適合企業級運算與複雜架構</li>
+                      <li className="flex items-center"><Icon name="Zap" size={16} className="text-green-500 mr-2" /> 以秒/分計費，彈性極高</li>
+                    </ul>
+                  </div>
+
+                  <div className="bg-white p-6 rounded-xl shadow-md border border-slate-100 hover:shadow-lg transition-shadow">
+                    <div className="flex items-center space-x-4 mb-4">
+                      <div className="p-3 bg-purple-100 text-purple-600 rounded-lg"><Icon name="Building" size={32} /></div>
+                      <h3 className="text-xl font-bold text-slate-800">VPS (虛擬專屬伺服器)</h3>
+                    </div>
+                    <p className="text-slate-600 mb-4 font-semibold text-purple-600">比喻：住公寓大廈</p>
+                    <ul className="space-y-2 text-sm text-slate-600">
+                      <li className="flex items-center"><Icon name="Zap" size={16} className="text-green-500 mr-2" /> 多個 VPS 共享實體機資源</li>
+                      <li className="flex items-center"><Icon name="Zap" size={16} className="text-green-500 mr-2" /> 擁有作業系統層級 Root 權限</li>
+                      <li className="flex items-center"><Icon name="Zap" size={16} className="text-green-500 mr-2" /> 適合架設網站、個人專案</li>
+                      <li className="flex items-center"><Icon name="Zap" size={16} className="text-green-500 mr-2" /> 以月/年固定計費，預算好抓</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            );
+          case 'aws-gcp':
+            return (
+              <div className="space-y-6 animate-fadeIn">
+                <h2 className="text-2xl font-bold text-slate-800 border-b pb-2">AWS Lightsail vs Google Compute Engine (GCE)</h2>
+                <p className="text-slate-600">這是「簡單打包」與「專業自訂」的對決。注意：Lightsail 是 AWS 的 VPS 產品，而 GCE 是 GCP 的核心虛擬機服務。</p>
+                <div className="overflow-x-auto bg-white rounded-xl shadow-sm border border-slate-200">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50">
+                        <th className="p-4 border-b text-slate-600 font-semibold min-w-[100px]">比較項目</th>
+                        <th className="p-4 border-b text-orange-500 font-bold min-w-[150px]">AWS (Lightsail)</th>
+                        <th className="p-4 border-b text-blue-500 font-bold min-w-[150px]">GCP (GCE)</th>
+                      </tr>
+                    </thead>
+                    <tbody className="text-sm">
+                      <tr className="border-b hover:bg-slate-50 transition-colors">
+                        <td className="p-4 font-medium text-slate-700">產品定位</td>
+                        <td className="p-4 text-slate-600">包裹式 VPS，簡單易用</td>
+                        <td className="p-4 text-slate-600">企業級 IaaS，擴展性極強</td>
+                      </tr>
+                      <tr className="border-b hover:bg-slate-50 transition-colors">
+                        <td className="p-4 font-medium text-slate-700">計費方式</td>
+                        <td className="p-4 text-slate-600">固定月費 (吃到飽概念)</td>
+                        <td className="p-4 text-slate-600">按時/秒計費，用多少算多少</td>
+                      </tr>
+                      <tr className="border-b hover:bg-slate-50 transition-colors">
+                        <td className="p-4 font-medium text-slate-700">網路流量</td>
+                        <td className="p-4 text-slate-600">內含固定免費額度 (如 1TB)</td>
+                        <td className="p-4 text-slate-600">通常按流量另外計費</td>
+                      </tr>
+                      <tr className="border-b hover:bg-slate-50 transition-colors">
+                        <td className="p-4 font-medium text-slate-700">學習曲線</td>
+                        <td className="p-4 text-slate-600 font-semibold text-orange-500">極低 (適合新手)</td>
+                        <td className="p-4 text-slate-600">較高 (介面選項繁多)</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            );
+          case 'ec2':
+            return (
+              <div className="space-y-6 animate-fadeIn">
+                <h2 className="text-2xl font-bold text-slate-800 border-b pb-2">Amazon EC2 核心功能解析</h2>
+                
+                <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
+                  <div className="bg-white p-5 rounded-xl border-l-4 border-orange-500 shadow-sm hover:-translate-y-1 transition-transform">
+                    <Icon name="Cpu" className="text-orange-500 mb-3" size={28} />
+                    <h4 className="font-bold text-slate-800 mb-2">運算彈性 (Compute)</h4>
+                    <p className="text-xs text-slate-600">超過 1100 種實例類型。支援自研 ARM Graviton 處理器，性價比極高。</p>
+                  </div>
+                  <div className="bg-white p-5 rounded-xl border-l-4 border-blue-500 shadow-sm hover:-translate-y-1 transition-transform">
+                    <Icon name="HardDrive" className="text-blue-500 mb-3" size={28} />
+                    <h4 className="font-bold text-slate-800 mb-2">持久存儲 (EBS)</h4>
+                    <p className="text-xs text-slate-600">實例關機資料不消失。可建立 AMI (機器鏡像檔) 快速複製伺服器。</p>
+                  </div>
+                  <div className="bg-white p-5 rounded-xl border-l-4 border-green-500 shadow-sm hover:-translate-y-1 transition-transform">
+                    <Icon name="Activity" className="text-green-500 mb-3" size={28} />
+                    <h4 className="font-bold text-slate-800 mb-2">自動擴展 (Auto Scaling)</h4>
+                    <p className="text-xs text-slate-600">流量暴增時自動增加機器，深夜無人時自動減少機器以節省成本。</p>
+                  </div>
+                </div>
+                
+                <div className="bg-orange-50 p-4 rounded-xl mt-4 border border-orange-100">
+                  <h4 className="font-bold text-orange-800 mb-3 flex items-center"><Icon name="Zap" size={18} className="mr-2"/> 多樣化付費模式</h4>
+                  <div className="flex flex-wrap gap-2 text-sm">
+                    <span className="bg-white px-3 py-1.5 rounded-full text-orange-700 shadow-sm border border-orange-100">按需 (On-Demand)</span>
+                    <span className="bg-white px-3 py-1.5 rounded-full text-orange-700 shadow-sm border border-orange-100">預留實例 (RI)</span>
+                    <span className="bg-white px-3 py-1.5 rounded-full text-orange-700 shadow-sm border border-orange-100">競價實例 (Spot, 最低1折)</span>
+                  </div>
+                </div>
+              </div>
+            );
+          case 'gce':
+            return (
+              <div className="space-y-6 animate-fadeIn">
+                <h2 className="text-2xl font-bold text-slate-800 border-b pb-2">Google Compute Engine (GCE) 核心功能</h2>
+                <p className="text-slate-600">GCE 是 Google Cloud 的核心運算服務，以其靈活性、穩定性及與 Google 全球網路的深度整合聞名。</p>
+                
+                <div className="grid sm:grid-cols-2 gap-5">
+                  <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 hover:border-blue-300 transition-colors">
+                    <div className="flex items-center mb-3">
+                      <div className="p-2 bg-blue-100 rounded-lg mr-3"><Icon name="Cpu" className="text-blue-600" size={20} /></div>
+                      <h4 className="font-bold text-slate-800 text-lg">自定義機器類型</h4>
+                    </div>
+                    <p className="text-sm text-slate-600 mb-3">不再受限於固定的套餐組合。你可以精準設定所需的 vCPU 數量和記憶體大小。</p>
+                    <div className="text-xs font-semibold text-blue-600 bg-blue-50 inline-block px-2 py-1 rounded">優勢：消除資源浪費，精準控制成本</div>
+                  </div>
+
+                  <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 hover:border-blue-300 transition-colors">
+                    <div className="flex items-center mb-3">
+                      <div className="p-2 bg-green-100 rounded-lg mr-3"><Icon name="Activity" className="text-green-600" size={20} /></div>
+                      <h4 className="font-bold text-slate-800 text-lg">即時遷移</h4>
+                    </div>
+                    <p className="text-sm text-slate-600 mb-3">底層維修時，虛擬機會被無縫搬移到另一台主機，服務「不會」中斷。</p>
+                    <div className="text-xs font-semibold text-green-600 bg-green-50 inline-block px-2 py-1 rounded">優勢：極高的服務可用性 (Uptime)</div>
+                  </div>
+
+                  <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 hover:border-blue-300 transition-colors">
+                    <div className="flex items-center mb-3">
+                      <div className="p-2 bg-purple-100 rounded-lg mr-3"><Icon name="Globe" className="text-purple-600" size={20} /></div>
+                      <h4 className="font-bold text-slate-800 text-lg">全域 VPC</h4>
+                    </div>
+                    <p className="text-sm text-slate-600 mb-3">位於台灣和美國的實例預設在同一個內網，透過 Google 自家光纖通訊。</p>
+                    <div className="text-xs font-semibold text-purple-600 bg-purple-50 inline-block px-2 py-1 rounded">優勢：架構設計簡化，低延遲連線</div>
+                  </div>
+
+                  <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 hover:border-blue-300 transition-colors">
+                    <div className="flex items-center mb-3">
+                      <div className="p-2 bg-amber-100 rounded-lg mr-3"><Icon name="Clock" className="text-amber-600" size={20} /></div>
+                      <h4 className="font-bold text-slate-800 text-lg">自動化折扣 (SUD)</h4>
+                    </div>
+                    <p className="text-sm text-slate-600 mb-3">無需預約。只要實例持續運行，系統會自動給予階梯式折扣。</p>
+                    <div className="text-xs font-semibold text-amber-600 bg-amber-50 inline-block px-2 py-1 rounded">優勢：管理省心，自動幫你省錢</div>
+                  </div>
+                </div>
+              </div>
+            );
+          case 'ec2-gce':
+            return (
+              <div className="space-y-6 animate-fadeIn">
+                <h2 className="text-2xl font-bold text-slate-800 border-b pb-2">AWS EC2 vs Google Cloud GCE</h2>
+                <p className="text-slate-600">這兩者是企業級雲端虛擬機的直接競爭對手。雖然功能對等，但在設計哲學上有很大差異。</p>
+                
+                <div className="space-y-4">
+                  <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                    <h3 className="font-bold text-lg text-slate-800 mb-3 flex items-center">
+                      <span className="bg-blue-100 text-blue-700 w-6 h-6 rounded-full flex items-center justify-center mr-2 text-sm">1</span>
+                      機器規格的靈活性
+                    </h3>
+                    <div className="grid md:grid-cols-2 gap-4 text-sm">
+                      <div className="bg-orange-50 p-4 rounded border border-orange-100">
+                        <span className="font-bold text-orange-600 flex items-center mb-2"><Icon name="Cpu" size={16} className="mr-2"/> EC2：固定規格</span>
+                        <p className="text-slate-600">像買套餐。CPU 與記憶體比例固定，如果只要增加記憶體，通常只能升級整個套餐。</p>
+                      </div>
+                      <div className="bg-blue-50 p-4 rounded border border-blue-100">
+                        <span className="font-bold text-blue-600 flex items-center mb-2"><Icon name="Cpu" size={16} className="mr-2"/> GCE：自定義機器</span>
+                        <p className="text-slate-600">像吃自助餐。可自由搭配任意 vCPU 與記憶體大小，不浪費資源。</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                    <h3 className="font-bold text-lg text-slate-800 mb-3 flex items-center">
+                      <span className="bg-blue-100 text-blue-700 w-6 h-6 rounded-full flex items-center justify-center mr-2 text-sm">2</span>
+                      停機與硬體維護
+                    </h3>
+                    <div className="grid md:grid-cols-2 gap-4 text-sm">
+                      <div className="bg-orange-50 p-4 rounded border border-orange-100">
+                        <span className="font-bold text-orange-600 flex items-center mb-2"><Icon name="Server" size={16} className="mr-2"/> EC2：關機重啟</span>
+                        <p className="text-slate-600">底層硬體維護時，實例通常需要重新啟動 (Stop/Start)，會經歷短暫的中斷。</p>
+                      </div>
+                      <div className="bg-blue-50 p-4 rounded border border-blue-100">
+                        <span className="font-bold text-blue-600 flex items-center mb-2"><Icon name="Activity" size={16} className="mr-2"/> GCE：即時遷移</span>
+                        <p className="text-slate-600">Google 的殺手鐧。維護時 VM 會在不關機的情況下「滑行」到另一台實體機。</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                    <h3 className="font-bold text-lg text-slate-800 mb-3 flex items-center">
+                      <span className="bg-blue-100 text-blue-700 w-6 h-6 rounded-full flex items-center justify-center mr-2 text-sm">3</span>
+                      網路架構 (VPC)
+                    </h3>
+                    <div className="grid md:grid-cols-2 gap-4 text-sm">
+                      <div className="bg-orange-50 p-4 rounded border border-orange-100">
+                        <span className="font-bold text-orange-600 flex items-center mb-2"><Icon name="Network" size={16} className="mr-2"/> EC2：區域性網路</span>
+                        <p className="text-slate-600">VPC 局限於單一區域 (如東京)。跨區通訊需額外設定 Peering 且成本較高。</p>
+                      </div>
+                      <div className="bg-blue-50 p-4 rounded border border-blue-100">
+                        <span className="font-bold text-blue-600 flex items-center mb-2"><Icon name="Globe" size={16} className="mr-2"/> GCE：全域性網路</span>
+                        <p className="text-slate-600">VPC 涵蓋全球。不同國家的實例預設都在同一個內網，設定更簡單。</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          case 'vpc':
+            return (
+              <div className="space-y-6 animate-fadeIn">
+                <h2 className="text-2xl font-bold text-slate-800 border-b pb-2">VPC (虛擬私有雲) 互動圖解</h2>
+                <p className="text-slate-600">VPC 就像是你在公共雲端大海中，圈出的一塊「私人辦公室」。</p>
+                
+                <div className="relative border-4 border-indigo-200 border-dashed rounded-2xl p-4 sm:p-6 bg-indigo-50/50 mt-8">
+                  <div className="absolute -top-4 left-6 bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full font-bold text-sm border-2 border-indigo-200 shadow-sm">
+                    你的專屬 VPC
+                  </div>
+                  
+                  <div className="flex flex-col md:flex-row gap-6 mt-4">
+                    {/* Public Subnet */}
+                    <div className="flex-1 bg-green-50 border-2 border-green-300 rounded-xl p-4 relative shadow-inner">
+                      <div className="absolute -top-3 left-4 bg-green-200 text-green-800 px-2 py-0.5 rounded text-xs font-bold shadow-sm">
+                        公用子網路 (對外開放)
+                      </div>
+                      <div className="mt-4 space-y-3">
+                        <div className="bg-white p-3 rounded-lg shadow border border-green-100 flex items-center justify-between transition-transform hover:scale-105">
+                          <span className="text-sm font-semibold">網頁伺服器 (Web)</span>
+                          <Icon name="Server" size={16} className="text-green-500"/>
+                        </div>
+                        <div className="text-center text-green-600 text-xs font-semibold flex items-center justify-center">
+                          <Icon name="ArrowRightLeft" size={14} className="mr-1"/> 可連接網際網路閘道
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Private Subnet */}
+                    <div className="flex-1 bg-red-50 border-2 border-red-300 rounded-xl p-4 relative shadow-inner">
+                      <div className="absolute -top-3 left-4 bg-red-200 text-red-800 px-2 py-0.5 rounded text-xs font-bold shadow-sm">
+                        私用子網路 (嚴格隔離)
+                      </div>
+                      <div className="mt-4 space-y-3">
+                        <div className="bg-white p-3 rounded-lg shadow border-l-4 border-l-red-500 flex items-center justify-between transition-transform hover:scale-105">
+                          <span className="text-sm font-semibold">內部資料庫 (DB)</span>
+                          <Icon name="HardDrive" size={16} className="text-red-500"/>
+                        </div>
+                        <div className="text-center text-red-600 text-xs font-semibold flex items-center justify-center">
+                          <Icon name="Lock" size={14} className="mr-1"/> 外網無法直接存取
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          case 'vpn-ssh':
+            return (
+              <div className="space-y-6 animate-fadeIn">
+                <h2 className="text-2xl font-bold text-slate-800 border-b pb-2">VPC, VPN 與 SSH 的關係</h2>
+                
+                <div className="flex flex-col space-y-4">
+                  <div className="bg-white p-5 rounded-xl border-l-4 border-indigo-500 shadow-sm hover:translate-x-1 transition-transform">
+                    <div className="flex items-center mb-2">
+                      <Icon name="Network" className="text-indigo-500 mr-3" size={24} />
+                      <h3 className="font-bold text-lg text-slate-800">VPC (虛擬私有雲) = 「安全的空間」</h3>
+                    </div>
+                    <p className="text-sm text-slate-600 pl-9">解決「我的伺服器要放在哪裡才安全」的問題。它是雲端架構的物理邊界。</p>
+                  </div>
+
+                  <div className="bg-white p-5 rounded-xl border-l-4 border-green-500 shadow-sm hover:translate-x-1 transition-transform">
+                    <div className="flex items-center mb-2">
+                      <Icon name="Shield" className="text-green-500 mr-3" size={24} />
+                      <h3 className="font-bold text-lg text-slate-800">VPN (虛擬專用網路) = 「整條加密隧道」</h3>
+                    </div>
+                    <p className="text-sm text-slate-600 pl-9">解決「我人在外面，如何連回內網」的問題。影響整台電腦的所有流量，適合遠端辦公。</p>
+                  </div>
+
+                  <div className="bg-white p-5 rounded-xl border-l-4 border-orange-500 shadow-sm hover:translate-x-1 transition-transform">
+                    <div className="flex items-center mb-2">
+                      <Icon name="Key" className="text-orange-500 mr-3" size={24} />
+                      <h3 className="font-bold text-lg text-slate-800">SSH (安全外殼協定) = 「通往伺服器的秘密小門」</h3>
+                    </div>
+                    <p className="text-sm text-slate-600 pl-9">針對特定連線的加密。通常用於工程師下指令管理伺服器，或設定臨時的 Port Forwarding (SSH 隧道)。</p>
+                  </div>
+                </div>
+              </div>
+            );
+          default:
+            return null;
+        }
+      };
+
+      return (
+        <div className="p-4 md:p-8 font-sans">
+          <div className="max-w-6xl mx-auto">
+            <header className="mb-8 text-center md:text-left">
+              <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 flex items-center justify-center md:justify-start">
+                <Icon name="Cloud" className="text-blue-600 mr-3" size={36} />
+                雲端架構與網路概念解析
+              </h1>
+              <p className="text-slate-500 mt-2 font-medium">互動式知識儀表板</p>
+            </header>
+
+            <div className="flex flex-col md:flex-row gap-6 lg:gap-8">
+              {/* Sidebar Navigation */}
+              <nav className="md:w-64 lg:w-72 flex-shrink-0 flex flex-col space-y-2 overflow-y-auto pb-4">
+                {tabs.map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`flex items-center px-4 py-3.5 rounded-xl text-left transition-all duration-200 font-medium border-2 w-full ${
+                      activeTab === tab.id
+                        ? 'bg-blue-600 text-white border-blue-600 shadow-md transform scale-[1.02]'
+                        : 'bg-white text-slate-600 border-transparent hover:border-blue-100 hover:bg-blue-50/50 hover:text-blue-600 shadow-sm'
+                    }`}
+                  >
+                    <span className={`mr-3 flex-shrink-0 ${activeTab === tab.id ? 'text-white' : 'text-slate-400'}`}>
+                      <Icon name={tab.icon} size={20} />
+                    </span>
+                    {tab.name}
+                  </button>
+                ))}
+              </nav>
+
+              {/* Main Content Area */}
+              <main className="flex-1 bg-white/90 backdrop-blur-sm rounded-2xl p-5 sm:p-8 shadow-xl min-h-[500px] border border-slate-100 overflow-hidden">
+                {renderContent()}
+              </main>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<CloudConceptsApp />);
+  </script>
+</body>
+</html>
