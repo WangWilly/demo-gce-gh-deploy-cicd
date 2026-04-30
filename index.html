@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GCE 終極部署百科全書</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap');
+        body { font-family: 'Inter', sans-serif; scroll-behavior: smooth; }
+        .code-block { background: #0f172a; color: #e2e8f0; padding: 1.5rem; border-radius: 0.75rem; position: relative; overflow-x: auto; border: 1px solid #1e293b; }
+        .copy-btn { position: absolute; top: 0.75rem; right: 0.75rem; background: #334155; padding: 0.4rem 0.8rem; border-radius: 0.4rem; font-size: 0.75rem; transition: all 0.2s; color: white; }
+        .copy-btn:hover { background: #475569; }
+        .sidebar-link.active { border-left: 4px solid #3b82f6; background: #eff6ff; color: #1d4ed8; }
+        .step-num { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: #3b82f6; color: white; border-radius: 8px; font-weight: bold; margin-right: 12px; font-size: 0.875rem; }
+        .status-pill { padding: 2px 8px; border-radius: 9999px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+
+    <div class="flex min-h-screen">
+        <!-- Sidebar -->
+        <aside class="w-80 bg-white border-r border-slate-200 hidden lg:block sticky top-0 h-screen overflow-y-auto">
+            <div class="p-8">
+                <h1 class="text-2xl font-black text-blue-600 tracking-tighter flex items-center">
+                    <i class="fas fa-book-open mr-2"></i> GCE DEPLOY
+                </h1>
+                <p class="text-xs text-slate-400 mt-1 uppercase font-bold tracking-widest">Project: iammodeltaiwan</p>
+            </div>
+            <nav class="px-4 space-y-1 pb-10">
+                <div class="px-4 py-2 text-xs font-bold text-slate-400 uppercase tracking-widest">入門指南</div>
+                <a href="#intro" class="sidebar-link flex items-center px-4 py-3 rounded-lg text-slate-600 hover:bg-slate-50 transition">
+                    <i class="fas fa-layer-group w-5"></i><span class="ml-3 font-medium">1. 架構總覽</span>
+                </a>
+                
+                <div class="px-4 py-2 mt-4 text-xs font-bold text-slate-400 uppercase tracking-widest">GCP 基礎設定</div>
+                <a href="#gce-setup" class="sidebar-link flex items-center px-4 py-3 rounded-lg text-slate-600 hover:bg-slate-50 transition">
+                    <i class="fas fa-server w-5"></i><span class="ml-3 font-medium">2. GCE 與 SA 建立</span>
+                </a>
+                <a href="#wif-setup" class="sidebar-link flex items-center px-4 py-3 rounded-lg text-slate-600 hover:bg-slate-50 transition">
+                    <i class="fas fa-key w-5"></i><span class="ml-3 font-medium">3. WIF 深度對接</span>
+                </a>
+
+                <div class="px-4 py-2 mt-4 text-xs font-bold text-slate-400 uppercase tracking-widest">安全與自動化</div>
+                <a href="#cloudflare" class="sidebar-link flex items-center px-4 py-3 rounded-lg text-slate-600 hover:bg-slate-50 transition">
+                    <i class="fas fa-cloud w-5"></i><span class="ml-3 font-medium">4. Cloudflare Tunnel</span>
+                </a>
+                <a href="#github-ci" class="sidebar-link flex items-center px-4 py-3 rounded-lg text-slate-600 hover:bg-slate-50 transition">
+                    <i class="fab fa-github w-5"></i><span class="ml-3 font-medium">5. GitHub CI/CD 配置</span>
+                </a>
+                
+                <div class="px-4 py-2 mt-4 text-xs font-bold text-slate-400 uppercase tracking-widest">維護與除錯</div>
+                <a href="#scripts" class="sidebar-link flex items-center px-4 py-3 rounded-lg text-slate-600 hover:bg-slate-50 transition">
+                    <i class="fas fa-code w-5"></i><span class="ml-3 font-medium">6. 核心腳本</span>
+                </a>
+                <a href="#faq" class="sidebar-link flex items-center px-4 py-3 rounded-lg text-slate-600 hover:bg-slate-50 transition">
+                    <i class="fas fa-bug w-5"></i><span class="ml-3 font-medium">7. 踩坑與解決方案</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-6 md:p-12 lg:p-20 max-w-5xl">
+            
+            <!-- 1. 架構總覽 -->
+            <section id="intro" class="mb-32">
+                <h2 class="text-5xl font-black text-slate-900 mb-8 tracking-tight leading-tight">
+                    重新定義部署流程：<br><span class="text-blue-600">更安全、更自動</span>
+                </h2>
+                <div class="prose prose-slate max-w-none text-slate-600 text-lg mb-10">
+                    <p>這份文件整合了 <b>Google Cloud (GCE)</b>、<b>GitHub Actions</b> 與 <b>Cloudflare Zero Trust</b>。我們解決了傳統部署中的 IP 暴露、SSH 金鑰管理與權限不對稱等問題。</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="p-6 bg-blue-600 text-white rounded-3xl shadow-xl shadow-blue-200">
+                        <h4 class="text-xl font-bold mb-4 flex items-center"><i class="fas fa-fingerprint mr-2"></i> 無密鑰身份驗證</h4>
+                        <p class="text-blue-100 text-sm leading-relaxed">不再手動上傳 SSH Key 或 Service Account JSON。透過 WIF OIDC 技術，讓 GitHub 直接與 GCP 溝通。</p>
+                    </div>
+                    <div class="p-6 bg-slate-900 text-white rounded-3xl shadow-xl shadow-slate-200">
+                        <h4 class="text-xl font-bold mb-4 flex items-center"><i class="fas fa-mask mr-2"></i> 零入站防火牆</h4>
+                        <p class="text-slate-400 text-sm leading-relaxed">Cloudflare Tunnel 建立由內而外的連線，你的 GCE 實例可以對外關閉 5000 埠，只允許 localhost 存取。</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 2. GCE 與 SA 建立 -->
+            <section id="gce-setup" class="mb-32">
+                <h3 class="text-3xl font-bold mb-10 flex items-center"><span class="step-num">2</span> GCP 基礎環境建立</h3>
+                
+                <div class="space-y-12">
+                    <div class="border-l-4 border-blue-500 pl-6 space-y-4">
+                        <h4 class="text-xl font-bold">2.1 建立服務帳戶 (Service Account)</h4>
+                        <p class="text-slate-600">這是 GitHub Actions 的身分代理人。</p>
+                        <ol class="list-decimal ml-5 text-sm text-slate-600 space-y-2">
+                            <li>前往 <b>IAM 與管理 > 服務帳戶</b>。</li>
+                            <li>建立帳戶：<code>github-deploy</code>。</li>
+                            <li>賦予以下角色：
+                                <ul class="mt-2 space-y-1 font-mono text-xs">
+                                    <li class="bg-slate-100 p-2 rounded text-blue-700">● 角色 1：Compute Instance Admin (v1)</li>
+                                    <li class="bg-slate-100 p-2 rounded text-blue-700">● 角色 2：Service Account User</li>
+                                    <li class="bg-slate-100 p-2 rounded text-blue-700">● 角色 3：Compute OS Admin Login (若需 sudo 權限)</li>
+                                </ul>
+                            </li>
+                        </ol>
+                    </div>
+
+                    <div class="border-l-4 border-slate-300 pl-6 space-y-4">
+                        <h4 class="text-xl font-bold">2.2 建立 GCE 執行個體</h4>
+                        <p class="text-slate-600">建立 VM 時，請注意以下設定：</p>
+                        <ul class="text-sm text-slate-500 space-y-2">
+                            <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2"></i> <b>服務帳戶</b>：選擇剛建立的 <code>github-deploy</code>。</li>
+                            <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2"></i> <b>防火牆</b>：勾選「允許 HTTP/HTTPS」流量 (Cloudflare 代理時仍需 80 埠或直接用 Tunnel)。</li>
+                            <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2"></i> <b>標籤</b>：建議設定 <code>http-server</code> 方便防火牆管理。</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 3. WIF 深度對接 -->
+            <section id="wif-setup" class="mb-32">
+                <h3 class="text-3xl font-bold mb-10 flex items-center"><span class="step-num">3</span> Workload Identity Federation (WIF)</h3>
+                <div class="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm space-y-8">
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="space-y-4">
+                            <h4 class="font-bold text-slate-800 flex items-center"><i class="fas fa-cogs mr-2 text-blue-500"></i> 第一步：建立 Pool & Provider</h4>
+                            <ul class="text-sm text-slate-500 space-y-2">
+                                <li>1. 進入 <b>Workload Identity Federation</b>。</li>
+                                <li>2. 建立 Pool: <code>github-pool</code>。</li>
+                                <li>3. 建立 Provider: <code>github-provider</code> (選擇 OIDC)。</li>
+                                <li>4. <b>Issuer URL</b>: <code class="bg-slate-100 text-pink-600">https://token.actions.githubusercontent.com</code></li>
+                            </ul>
+                        </div>
+                        <div class="space-y-4">
+                            <h4 class="font-bold text-slate-800 flex items-center"><i class="fas fa-exchange-alt mr-2 text-blue-500"></i> 第二步：屬性映射 (Mapping)</h4>
+                            <p class="text-xs text-slate-500">這是讓 GCP 認出你 GitHub 帳號的橋樑。</p>
+                            <div class="text-xs font-mono bg-slate-50 p-3 rounded-lg border">
+                                google.subject = assertion.sub<br>
+                                attribute.repository = assertion.repository<br>
+                                attribute.repository_owner = assertion.repository_owner
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-6 border-t border-slate-100">
+                        <h4 class="font-bold mb-4 text-slate-800">第三步：將 SA 權限開放給 WIF</h4>
+                        <p class="text-sm text-slate-500 mb-4">這一步解決 <code>getAccessToken denied</code> 報錯。將你的 GitHub 身分加入該 Service Account 的 <b>PrincipalSet</b>。</p>
+                        <div class="code-block">
+                            <button class="copy-btn" onclick="copyCode(this)">複製路徑</button>
+                            <code class="text-xs">principalSet://iam.googleapis.com/projects/865505184616/locations/global/workloadIdentityPools/github-pool/attribute.repository_owner/WangWilly</code>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 4. Cloudflare Tunnel -->
+            <section id="cloudflare" class="mb-32">
+                <h3 class="text-3xl font-bold mb-10 flex items-center"><span class="step-num">4</span> Cloudflare Tunnel 設定</h3>
+                <div class="bg-slate-900 text-white rounded-3xl p-8 space-y-8">
+                    <div class="flex flex-col md:flex-row gap-8">
+                        <div class="flex-1 space-y-4">
+                            <h4 class="text-xl font-bold text-blue-400">零信任安全連線</h4>
+                            <p class="text-sm text-slate-400">Cloudflare Tunnel 就像是在你的 GCE 與 Cloudflare 之間接了一根專線，黑客在網路上看不到你的伺服器 IP。</p>
+                            <div class="space-y-3 mt-6">
+                                <div class="flex items-center"><span class="w-2 h-2 bg-blue-500 rounded-full mr-3"></span><span class="text-xs font-bold uppercase tracking-widest text-slate-500">Service Type</span> <span class="ml-auto font-mono text-sm">HTTP</span></div>
+                                <div class="flex items-center"><span class="w-2 h-2 bg-blue-500 rounded-full mr-3"></span><span class="text-xs font-bold uppercase tracking-widest text-slate-500">Local URL</span> <span class="ml-auto font-mono text-sm">http://localhost:5000</span></div>
+                            </div>
+                        </div>
+                        <div class="flex-1 bg-slate-800 rounded-2xl p-6 border border-slate-700">
+                            <h4 class="font-bold mb-4 text-sm uppercase tracking-widest">GCE 安裝指令</h4>
+                            <div class="code-block bg-slate-950 p-4 border-0">
+<pre class="text-xs"># 安裝套件
+curl -L --output cf.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
+sudo dpkg -i cf.deb
+
+# 登入與啟動
+sudo cloudflared service install [YOUR_TOKEN]</pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 5. GitHub CI/CD 配置 -->
+            <section id="github-ci" class="mb-32">
+                <h3 class="text-3xl font-bold mb-10 flex items-center"><span class="step-num">5</span> GitHub Actions 配置</h3>
+                <div class="space-y-8">
+                    <div class="bg-white rounded-2xl border border-slate-200 p-8">
+                        <h4 class="font-bold mb-6 flex items-center text-slate-800">
+                            <i class="fas fa-file-code mr-2 text-blue-500"></i> .github/workflows/deploy.yml
+                        </h4>
+                        <div class="code-block">
+                            <button class="copy-btn" onclick="copyCode(this)">複製 YAML</button>
+<pre class="text-xs">
+name: Deploy to GCE
+on: [workflow_dispatch] # 手動觸發
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: 'write' # WIF 必備
+      contents: 'read'
+    steps:
+      - uses: actions/checkout@v4
+      - id: 'auth'
+        uses: 'google-github-actions/auth@v2'
+        with:
+          workload_identity_provider: '${{ secrets.WIF_PROVIDER }}'
+          service_account: '${{ secrets.GCP_SA_EMAIL }}'
+      - uses: 'google-github-actions/setup-gcloud@v2'
+      - name: 'Execute Deploy Script'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DEPLOY_ENV_CONTENT: ${{ secrets.DEPLOY_ENV }}
+          GCE_SSH_USER: iammodeltaiwan
+        run: bash scripts/github_deploy.sh
+</pre>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 6. 核心腳本 -->
+            <section id="scripts" class="mb-32">
+                <h3 class="text-3xl font-bold mb-10 flex items-center"><span class="step-num">6</span> 核心部署腳本 (github_deploy.sh)</h3>
+                <div class="bg-white rounded-2xl border border-slate-200 p-8">
+                    <div class="code-block max-h-[500px] overflow-y-auto">
+                        <button class="copy-btn" onclick="copyCode(this)">複製腳本</button>
+<pre class="text-xs">
+#!/bin/bash
+set -e
+PROJECT_DIR="~/linebot-iammodel"
+REMOTE_USER=$GCE_SSH_USER 
+
+# 1. 建立遠端指令
+cat <<'REMOTE_EOF' > deploy_script.sh
+set -e
+PROJECT_DIR="$HOME/linebot-iammodel"
+export GH_TOKEN="${REMOTE_GH_TOKEN}"
+
+# 設定 Git 憑證小幫手 (解決 private repo 認證)
+gh auth setup-git
+
+# 檢查目錄並同步
+if [ ! -d "$PROJECT_DIR/.git" ]; then
+  rm -rf "$PROJECT_DIR"
+  gh repo clone WangWilly/linebot-immodel "$PROJECT_DIR"
+fi
+cd "$PROJECT_DIR"
+git fetch origin main && git reset --hard origin/main && git clean -fd
+
+# 環境建置
+export PATH="$HOME/.local/bin:$PATH"
+if ! command -v uv &> /dev/null; then
+  curl -LsSf https://astral.sh/uv/install.sh | sh
+fi
+uv sync
+
+# 重啟程序
+sudo fuser -k 5000/tcp || true
+nohup uv run uvicorn app:app --host 0.0.0.0 --port 5000 > app.log 2>&1 &
+REMOTE_EOF
+
+# 2. 準備 .env 並傳輸
+printf "%s" "${DEPLOY_ENV_CONTENT}" > .env.tmp
+gcloud compute scp deploy_script.sh ${REMOTE_USER}@${GCE_INSTANCE_NAME}:~/ --zone=${GCE_INSTANCE_ZONE}
+gcloud compute scp .env.tmp ${REMOTE_USER}@${GCE_INSTANCE_NAME}:~/env.tmp --zone=${GCE_INSTANCE_ZONE}
+
+# 3. 執行
+gcloud compute ssh ${REMOTE_USER}@${GCE_INSTANCE_NAME} --zone=${GCE_INSTANCE_ZONE} --command="mkdir -p $PROJECT_DIR && mv ~/env.tmp $PROJECT_DIR/.env && REMOTE_GH_TOKEN='${GH_TOKEN}' bash ~/deploy_script.sh"
+</pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- FAQ -->
+            <section id="faq" class="mb-32">
+                <h3 class="text-3xl font-bold mb-10">FAQ: 踩坑筆記</h3>
+                <div class="grid grid-cols-1 gap-6">
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200">
+                        <h4 class="font-bold text-red-600 mb-2">Q: 為什麼 SSH 一直噴 403 Access Denied？</h4>
+                        <p class="text-sm text-slate-600">A: 兩大原因：1. SA 沒開 <b>Service Account Token Creator</b>。 2. 你沒把 GitHub 的 <b>PrincipalSet</b> 加入 SA 的存取清單中。請回頭檢查 Phase 3 的路徑。</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200">
+                        <h4 class="font-bold text-amber-600 mb-2">Q: 為什麼 git fetch 失敗？</h4>
+                        <p class="text-sm text-slate-600">A: CI/CD 執行時是非互動式終端機，git 預設不讀取環境變數。務必執行 <code>gh auth setup-git</code> 讓 GitHub CLI 接手憑證管理。</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200">
+                        <h4 class="font-bold text-blue-600 mb-2">Q: 為什麼 Cloudflare Tunnel 顯示 Down？</h4>
+                        <p class="text-sm text-slate-600">A: 請檢查 GCE 是否有安裝 <code>cloudflared</code> 並啟動為 systemd 服務。可用 <code>sudo journalctl -u cloudflared</code> 查看日誌。</p>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script>
+        function copyCode(btn) {
+            const code = btn.nextElementSibling.innerText;
+            const temp = document.createElement('textarea');
+            temp.value = code;
+            document.body.appendChild(temp);
+            temp.select();
+            document.execCommand('copy');
+            document.body.removeChild(temp);
+            
+            const originalText = btn.innerText;
+            btn.innerText = '已複製！';
+            btn.classList.add('bg-green-600', 'text-white');
+            setTimeout(() => {
+                btn.innerText = originalText;
+                btn.classList.remove('bg-green-600', 'text-white');
+            }, 2000);
+        }
+
+        // Active link on scroll
+        window.addEventListener('scroll', () => {
+            const sections = document.querySelectorAll('section');
+            const links = document.querySelectorAll('.sidebar-link');
+            
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                if (pageYOffset >= sectionTop - 200) {
+                    current = section.getAttribute('id');
+                }
+            });
+
+            links.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href').includes(current)) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
